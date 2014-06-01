@@ -5,15 +5,12 @@ SETTING = YAML.load_file("settings.yml")
 TMPFILEPATH = SETTING["default"]["templateFilePath"]
 OUTPUTPATH = SETTING["default"]["outputFilePath"]
 EXCLUSION = SETTING["default"]["exclusion"]
+EXCLUSIONSHEET = SETTING["default"]["exclusionSheet"]
 
 def cellFormat(cell)
     cell = cell.value  if cell.instance_of?(Spreadsheet::Formula)
     if cell.instance_of?(String) then
-        flg = false
-        EXCLUSION.each do |ex|
-              flg = true if cell.casecmp(ex) == 0
-        end
-        cell = "'" + cell + "'" if flg == false
+        cell = "'" + cell + "'" if !EXCLUSION.include?(cell)
     end
     return cell
 end
@@ -60,6 +57,7 @@ begin
     book.worksheets.each do |ws|
         sqlArray.clear
         columnArray.clear
+        next if EXCLUSIONSHEET.include?(ws.name)
         ws.each_with_index do |row, row_idx|
             cellArray.clear
             row.each do |cell|

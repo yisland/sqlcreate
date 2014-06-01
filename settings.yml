@@ -4,3 +4,5 @@ default:
     exclusion:
         - sysdate
         - systimestamp
+    exclusionSheet:
+        - tst

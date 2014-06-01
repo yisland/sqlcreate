@@ -1,0 +1,6 @@
+default:
+    templateFilePath: ./template.xls
+    outputFilePath: ./tmp
+    exclusion:
+        - sysdate
+        - systimestamp

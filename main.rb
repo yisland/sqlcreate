@@ -9,24 +9,27 @@ EXCLUSIONSHEET = SETTING["default"]["exclusionSheet"]
 
 def cellFormat(cell)
     cell = cell.value  if cell.instance_of?(Spreadsheet::Formula)
+    if cell.instance_of?(DateTime) then
+        cell = cell.strftime("%Y/%m/%d %X")
+    end
     if cell.instance_of?(String) then
         cell = "'" + cell + "'" if !EXCLUSION.include?(cell)
     end
     return cell
 end
 
-def insert(name, columnArray, cellArray)
+def insert(name, hash)
     sql = "INSERT INTO " + name + "(" 
-    columnArray.each do |column|
-        sql << column + ","
+    hash.each_key do |key|
+        sql << key + ","
     end
     sql.chop!
     sql << ") VALUES("
-    cellArray.each do |cell|
-        if !cell.instance_of?(String) then
-            sql.concat(cell.to_s + ",")
+    hash.each_value do |value|
+        if !value.instance_of?(String) then
+            sql.concat(value.to_s + ",")
         else
-            sql.concat(cell + ",")
+            sql.concat(value + ",")
         end
     end
     sql.chop!
@@ -47,13 +50,13 @@ end
 
 Spreadsheet.client_encoding = 'UTF-8'
 
-book = Spreadsheet.open(TMPFILEPATH, 'rb')
-
 columnArray = []
 cellArray = []
 sqlArray = []
 
 begin
+    book = Spreadsheet.open(TMPFILEPATH, 'rb')
+
     book.worksheets.each do |ws|
         sqlArray.clear
         columnArray.clear
@@ -68,8 +71,14 @@ begin
                 cellArray.push cellFormat(cell)
             end
             if row_idx > 0 then
-                if cellArray.length != 0 then
-                    sqlArray.push insert(ws.name, columnArray, cellArray)
+                next if columnArray.length != cellArray.length
+                hash = {}
+                columnArray.each_with_index do |columnRow, idx|
+                    cell = cellArray[idx]
+                    hash.store(columnRow, cell) if cell != nil
+                end
+                if hash.length != 0 then
+                    sqlArray.push insert(ws.name, hash)
                 end
             end
         end
